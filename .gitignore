@@ -1,0 +1,11 @@
+.coverage
+env/*
+htmlcov/*
+/coverage.xml
+*.pyc
+*.ini
+testrun*
+data
+*.swp
+.DS_Store
+/.env-dev
