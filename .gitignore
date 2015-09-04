@@ -9,3 +9,4 @@ data
 *.swp
 .DS_Store
 /.env-dev
+db.sqlite3
