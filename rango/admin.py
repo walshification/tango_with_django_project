@@ -7,6 +7,11 @@ class AdminPage(admin.ModelAdmin):
     list_display = ('title', 'category', 'url')
 
 
-admin.site.register(Category)
+class AdminCategory(admin.ModelAdmin):
+    
+    prepopulated_fields = {'slug':('name',)}
+
+
+admin.site.register(Category, AdminCategory)
 admin.site.register(Page, AdminPage)
 

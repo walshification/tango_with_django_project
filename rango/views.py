@@ -1,19 +1,31 @@
 from django.http import HttpResponse
 from django.shortcuts import render
 
+from rango.models import Category, Page
+
 
 def index(request):
-    # Construct a dictionary to pass to the template engine as its context.
-    # Note the key boldmessage is the same as {{ boldmessage }} in the template.
-    context_dict = {'boldmessage': 'I am bold font from the context'}
-
-    # Return a rendered response to send to the client.
-    # We make use of the shortcut function to make our lives easier.
-    # Note that the first parameter is the template we with to use.
+    category_list = Category.objects.order_by('-likes')[:5]
+    context = {'categories': category_list}
     
-    return render(request, 'rango/index.html', context_dict)
+    return render(request, 'rango/index.html', context)
 
 
 def about(request):
-    context_dict = {}
-    return render(request, 'rango/about.html', context_dict)
+    context = {}
+    return render(request, 'rango/about.html', context)
+
+
+def category(request, category_name_slug):
+    context = {}
+    try:
+        category = Category.objects.get(slug=category_name_slug)
+        context['category_name'] = category.name
+
+        pages = Page.objects.filter(category=category)
+        context['pages'] = pages
+        context['category'] = category
+    except Category.DoesNotExist:
+        pass
+
+    return render(request, 'rango/category.html', context)
