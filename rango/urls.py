@@ -9,4 +9,5 @@ urlpatterns = patterns('',
         views.add_page, name='add_page'),
     url(r'^category/(?P<category_name_slug>[\w\-]+)/$', views.category,
         name='category'),
+    url(r'^register/$', views.register, name='register'),
 )
