@@ -12,6 +12,9 @@
         {% else %}
         Rango says: <strong>register here!</strong> Click <a href="/rango/">here</a> to return to the homepage.<br />
 
+        {% if context %}
+        <p>{{ context['error'] }}</p>
+
         <form id="user_form" method="post" action="/rango/register/"
                 enctype="multipart/form-data">
 
