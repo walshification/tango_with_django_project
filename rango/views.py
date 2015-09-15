@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
@@ -12,11 +14,36 @@ def index(request):
     page_list = Page.objects.order_by('-views')[:5]
     context = {'categories': category_list, 'pages': page_list}
 
-    return render(request, 'rango/index.html', context)
+    visits = request.session.get('visits')
+    if not visits:
+        visits = 1
+    reset_last_visit_time = False
+
+    last_visit = request.session.get('last_visit')
+    if last_visit:
+        last_visit_time = datetime.strptime(last_visit[:-7],
+                                            "%Y-%m-%d %H:%M:%S")
+        if (datetime.now() - last_visit_time).days > 0:
+            visits += 1
+            reset_last_visit_time = True
+    else:
+        reset_last_visit_time = True
+
+    if reset_last_visit_time:
+        request.session['last_visit'] = str(datetime.now())
+        request.session['visits'] = visits
+    context['visits'] = visits
+
+    response = render(request, 'rango/index.html', context)
+    return response
 
 
 def about(request):
-    context = {}
+    if request.session.get('visits'):
+        count = request.session.get('visits')
+    else:
+        count = 0
+    context = {'visits': count}
     return render(request, 'rango/about.html', context)
 
 
@@ -125,11 +152,12 @@ def user_login(request):
                 return HttpResponseRedirect('/rango/')
             else:
                 # An inactive account was used - no logging in!
-                return HttpResponse("Your Rango account is disabled.")
+                context = {'error': 'Your Rango account is disabled.'}
+                return render(request, 'rango/user_login', context)
         else:
             # Bad login details were provided. So we can't log the user in.
-            print "Invalid login details: {0}, {1}".format(username, password)
-            return HttpResponse("Invalid login details supplied.")
+            context = {'error': "Invalid username or password"}
+            return render(request, 'rango/login.html', context)
     else:
         # Render the login page with an empty context.
         return render(request, 'rango/login.html', {})
@@ -137,7 +165,7 @@ def user_login(request):
 
 @login_required
 def restricted(request):
-    return HttpResponse("Since you're logged in, you can see this text!")
+    return render(request, 'rango/restricted.html', {})
 
 
 @login_required
