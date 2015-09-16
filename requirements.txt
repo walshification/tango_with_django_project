@@ -1,2 +1,4 @@
-Django==1.7
-Pillow==2.9.0
+Django==1.8
+django-registration-redux==1.2
+Pillow==2.8.0
+virtualenv==12.1.1
