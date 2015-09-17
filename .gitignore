@@ -11,3 +11,4 @@ data
 /.env-dev
 db.sqlite3
 static/*
+keys.py
