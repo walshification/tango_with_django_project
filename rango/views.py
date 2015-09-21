@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 
+from rango.bing_search import run_query
 from rango.models import Category, Page
 from rango.forms import CategoryForm, PageForm, UserForm, UserProfileForm
 
@@ -17,15 +18,15 @@ def index(request):
     visits = request.session.get('visits')
     if not visits:
         visits = 1
-    reset_last_visit_time = False
+        reset_last_visit_time = False
 
-    last_visit = request.session.get('last_visit')
-    if last_visit:
-        last_visit_time = datetime.strptime(last_visit[:-7],
-                                            "%Y-%m-%d %H:%M:%S")
-        if (datetime.now() - last_visit_time).days > 0:
-            visits += 1
-            reset_last_visit_time = True
+        last_visit = request.session.get('last_visit')
+        if last_visit:
+            last_visit_time = datetime.strptime(last_visit[:-7],
+                                                "%Y-%m-%d %H:%M:%S")
+            if (datetime.now() - last_visit_time).days > 0:
+                visits += 1
+                reset_last_visit_time = True
     else:
         reset_last_visit_time = True
 
@@ -49,6 +50,17 @@ def about(request):
 
 def category(request, category_name_slug):
     context = {}
+    context['result_list'] = None
+    context['query'] = None
+    if request.method == 'POST':
+        query = request.POST['query'].strip()
+
+        if query:
+            # Run our Bing function to get the results list!
+            result_list = run_query(query)
+
+            context['result_list'] = result_list
+            context['query'] = query
     try:
         category = Category.objects.get(slug=category_name_slug)
         context['category_name'] = category.name
@@ -59,6 +71,9 @@ def category(request, category_name_slug):
         context['category_name_slug'] = category_name_slug
     except Category.DoesNotExist:
         pass
+
+    if not context['query']:
+        context['query'] = category.name
 
     return render(request, 'rango/category.html', context)
 
@@ -174,6 +189,17 @@ def user_logout(request):
     return HttpResponseRedirect('/rango/')
 
 
+def search(request):
+    result_list = []
+    if request.method == 'POST':
+        query = request.POST['query'].strip()
+
+        if query:
+            result_list = run_query(query)
+
+    return render(request, 'rango/search.html', {'result_list': result_list})
+
+
 def track_url(request):
     page_id = None
     url = '/rango/'
@@ -189,3 +215,20 @@ def track_url(request):
                 pass
 
     return redirect(url)
+
+
+@login_required
+def like_category(request):
+    cat_id = None
+    if request.method == 'GET':
+        cat_id = request.GET['category_id']
+
+    likes = 0
+    if cat_id:
+        cat = Category.objects.get(id=int(cat_id))
+        if cat:
+            likes = cat.likes + 1
+            cat.likes = likes
+            cat.save()
+
+    return HttpResponse(likes)
